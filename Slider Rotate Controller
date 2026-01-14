@@ -1,0 +1,29 @@
+using UnityEngine;
+using UnityEngine.UI;
+
+public class SliderRotateController : MonoBehaviour
+{
+    public Transform modelTransform;
+    public Slider rotationSlider;
+    public float maxRotation = 180f; // Maximum rotation angle in degrees
+
+    private void Start()
+    {
+        if (modelTransform == null)
+        {
+            modelTransform = transform; // Use the transform of this GameObject if not assigned
+        }
+
+        if (rotationSlider == null)
+        {
+            Debug.LogError("Rotation Slider not assigned!");
+        }
+    }
+
+    public void OnSliderValueChanged()
+    {
+        float normalizedValue = rotationSlider.normalizedValue;
+        float rotation = Mathf.Lerp(-maxRotation, maxRotation, normalizedValue);
+        modelTransform.localRotation = Quaternion.Euler(0f, rotation, 0f);
+    }
+}
