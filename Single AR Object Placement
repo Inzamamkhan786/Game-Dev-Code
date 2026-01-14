@@ -1,0 +1,62 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
+using UnityEngine.InputSystem;
+
+public class ARPlacement_Single : MonoBehaviour
+{
+    public GameObject objectToSpawn;
+    public GameObject placementIndicator;
+
+    private ARRaycastManager raycastManager;
+    private Pose placementPose;
+    private bool placementPoseIsValid;
+    private bool placed = false;
+
+    static List<ARRaycastHit> hits = new();
+
+    void Start()
+    {
+        raycastManager = FindObjectOfType<ARRaycastManager>();
+        placementIndicator.SetActive(false);
+    }
+
+    void Update()
+    {
+        if (placed) return;
+
+        UpdatePlacementPose();
+        UpdatePlacementIndicator();
+
+#if UNITY_EDITOR
+        if (placementPoseIsValid && Mouse.current.leftButton.wasPressedThisFrame)
+#else
+        if (placementPoseIsValid && Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
+#endif
+        {
+            Instantiate(objectToSpawn, placementPose.position, placementPose.rotation);
+            placed = true;
+            placementIndicator.SetActive(false);
+        }
+    }
+
+    void UpdatePlacementPose()
+    {
+        placementPoseIsValid = raycastManager.Raycast(
+            new Vector2(Screen.width / 2, Screen.height / 2),
+            hits,
+            TrackableType.PlaneWithinPolygon);
+
+        if (placementPoseIsValid)
+            placementPose = hits[0].pose;
+    }
+
+    void UpdatePlacementIndicator()
+    {
+        placementIndicator.SetActive(placementPoseIsValid);
+        if (placementPoseIsValid)
+            placementIndicator.transform.SetPositionAndRotation(
+                placementPose.position, placementPose.rotation);
+    }
+}
