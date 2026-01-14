@@ -1,0 +1,84 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
+using UnityEngine.InputSystem;
+
+public class ARPlacement : MonoBehaviour
+{
+    public GameObject arObjectToSpawn;
+    public GameObject placementIndicator;
+
+    private Pose placementPose;
+    private bool placementPoseIsValid;
+
+    private ARRaycastManager raycastManager;
+    private static List<ARRaycastHit> hits = new List<ARRaycastHit>();
+
+    void Start()
+    {
+        raycastManager = FindObjectOfType<ARRaycastManager>();
+        placementIndicator.SetActive(false);
+    }
+
+    void Update()
+    {
+        UpdatePlacementPose();
+        UpdatePlacementIndicator();
+
+#if UNITY_EDITOR
+        if (placementPoseIsValid &&
+            Mouse.current != null &&
+            Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            PlaceObject();
+        }
+#else
+        if (placementPoseIsValid &&
+            Touchscreen.current != null &&
+            Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
+        {
+            PlaceObject();
+        }
+#endif
+    }
+
+    void UpdatePlacementPose()
+    {
+        Vector2 screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
+
+        placementPoseIsValid = raycastManager.Raycast(
+            screenCenter,
+            hits,
+            TrackableType.PlaneWithinPolygon
+        );
+
+        if (placementPoseIsValid)
+            placementPose = hits[0].pose;
+    }
+
+    void UpdatePlacementIndicator()
+    {
+        if (placementPoseIsValid)
+        {
+            placementIndicator.SetActive(true);
+            placementIndicator.transform.SetPositionAndRotation(
+                placementPose.position,
+                placementPose.rotation
+            );
+        }
+        else
+        {
+            placementIndicator.SetActive(false);
+        }
+    }
+
+    void PlaceObject()
+    {
+        Instantiate(
+            arObjectToSpawn,
+            placementPose.position,
+            placementPose.rotation
+        );
+    }
+}
